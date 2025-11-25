@@ -1,0 +1,150 @@
+Table Organizations {
+  id uuid [pk]
+  name varchar
+  email varchar [unique]
+  description text
+  industry varchar
+  domain_url varchar
+  status varchar            // pending, active, suspended
+  owner_id uuid [ref: > employees.id, null]
+  email_verified_at timestamp [null]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table Configurations {
+  id uuid [pk]
+  business_id uuid [ref: > Organizations.id, unique]
+  bot_name varchar
+  tone_style varchar
+  auto_reply_enabled boolean
+  operating_hour_start time
+  operating_hour_end time
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table Credentials {
+  id uuid [pk]
+  business_id uuid [ref: > Organizations.id]
+  api_key_hashed varchar
+  prefix varchar
+  created_by uuid [ref: > employees.id]
+  revoked_at timestamp [null]
+  revoked_by uuid [ref: > employees.id, null]
+  last_used_at timestamp [null]
+  is_active boolean
+  created_at timestamp
+}
+
+Table employees {
+  id uuid [pk]
+  business_id uuid [ref: > Organizations.id]
+  full_name varchar
+  email varchar [unique]
+  password varchar
+  invitation_id uuid [ref: > Invitations.id, null]
+  email_verified_at timestamp [null]
+  is_active boolean [default: true]
+  last_login_at timestamp [null]
+  role varchar              // 'owner' or 'staff'
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table Invitations {
+  id uuid [pk]
+  business_id uuid [ref: > Organizations.id]
+  created_by uuid [ref: > employees.id]
+  email varchar
+  full_name varchar
+  role varchar
+  token uuid [unique]
+  expires_at timestamp
+  accepted_at timestamp [null]
+  created_at timestamp
+}
+
+Table EndUsers {
+  id uuid [pk]
+  business_id uuid [ref: > Organizations.id]
+  external_id varchar
+  name varchar
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table ChatSessions {
+  id uuid [pk]
+  business_id uuid [ref: > Organizations.id]
+  end_user_id uuid [ref: > EndUsers.id]
+  session_token varchar [unique]
+  status varchar
+  started_at timestamp
+  ended_at timestamp
+  feedback_id uuid [null]
+}
+
+Table ChatMessages {
+  id uuid [pk]
+  session_id uuid [ref: > ChatSessions.id]
+  sender_type varchar
+  content text
+  ai_model_used varchar
+  emotion_detected varchar [null]
+  created_at timestamp
+}
+
+Table Feedbacks {
+  id uuid [pk]
+  end_user_id uuid [ref: > EndUsers.id]
+  session_id uuid [ref: > ChatSessions.id]
+  rating int
+  comment text
+  submitted_at timestamp
+}
+
+Ref: ChatSessions.feedback_id > Feedbacks.id
+
+Table KnowledgeBases {
+  id uuid [pk]
+  business_id uuid [ref: > Organizations.id]
+  base_type varchar
+  content_json json
+  file_url varchar
+  file_type varchar
+  embedding_vector vector
+  created_at timestamp
+}
+
+Table KnowledgeBaseChunks {
+  id uuid [pk]
+  kb_id uuid [ref: > KnowledgeBases.id]
+  business_id uuid [ref: > Organizations.id]
+  chunk_index int
+  chunk_text text
+  embedding_vector vector
+  created_at timestamp
+}
+
+Table AnalyticsReports {
+  id uuid [pk]
+  business_id uuid [ref: > Organizations.id]
+  total_chats int
+  avg_response_time float
+  user_satisfaction float
+  report_period_start date
+  report_period_end date
+  generated_at timestamp
+}
+
+Table VoiceMessages {
+  id uuid [pk]
+  session_id uuid [ref: > ChatSessions.id]
+  audio_file_url varchar
+  content text
+  detected_emotion varchar
+  sender_type varchar
+  ai_model_used varchar
+  created_at timestamp
+}
